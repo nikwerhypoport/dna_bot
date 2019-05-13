@@ -3,9 +3,9 @@ import os
 from enum import Enum
 from hmac import new, compare_digest
 
+
 class GithubEventType(Enum):
     ISSUE_COMMENT = 'issue_comment'
-
 
 
 def _is_valid(request_signature: str, payload):
