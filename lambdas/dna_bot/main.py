@@ -1,7 +1,7 @@
 import json
 from typing import Dict
 
-from lambdas.dna_bot.commons import _is_valid, _error, _ok
+from dna_bot.commons import _is_valid, _error, _ok
 
 
 def branch_creation_handler(event: Dict, context):
@@ -10,7 +10,7 @@ def branch_creation_handler(event: Dict, context):
     if not content:
         return _error(400, 'payload empty or missing')
 
-    body_as_str = json.dumps(content, indent=None)
+    body_as_str = json.dumps(content, sort_keys=False, ensure_ascii=True, separators=(',', ':'))
     if not body_as_str:
         return _error(400, 'payload empty or missing')
 
@@ -22,6 +22,3 @@ def branch_creation_handler(event: Dict, context):
         return _error(403, 'X-Hub-Signature is invalid')
 
     return _ok('alles klar')
-
-    # print(event)
-    #print(json.dumps(event, indent=False))
