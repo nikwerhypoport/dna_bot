@@ -1,31 +1,7 @@
 import json
-import os
 from typing import Dict
-from hmac import compare_digest, new
-import hashlib
 
-
-def _response(status:int, message:str):
-    return {
-        'isBase64Encoded': False,
-        'headers': {},
-        'statusCode': status,
-        'body': '{"message" : "%s" }' % message.replace('"', '\\"').replace('\n', '\\n')  # json escape
-    }
-
-
-def _error(status=400, message='Could not perform request'):
-    return _response(status, message)
-
-
-def _ok(message: str):
-    return _response(200, message)
-
-
-def _is_valid(request_signature: str, payload: str):
-    secret = os.environ['SECRET']
-    signature = f'sha1={new(key=secret.encode(), msg=payload, digestmod=hashlib.sha1)}'
-    return compare_digest(signature, request_signature)
+from lambdas.dna_bot.commons import _is_valid, _error, _ok
 
 
 def branch_creation_handler(event: Dict, context):
