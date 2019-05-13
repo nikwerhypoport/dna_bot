@@ -1,7 +1,7 @@
 import json
 import os
 from typing import Dict
-from github import Github, GithubException
+from github import Github, GithubException, GitRef
 
 from dna_bot.commons import _is_valid, _error, _ok, GithubEventType
 
@@ -14,33 +14,40 @@ def _contains_command(content: str):
     return content.find('_cb_') >= 0
 
 
-def _create_branch(content: Dict):
+def _create_branch(content: Dict) -> GitRef:
     issue_number: str = content.get('issue', {}).get('number')
     repository: str = content.get('repository', {}).get('name')
     branch_name = f'fix_issue_{issue_number}'
-    branch_counter = 0
 
     g = Github(os.environ['GITHUB_ACCESS_TOKEN'])
-    head = g.get_organization('hypoport').get_repo(repository).commit.sha
+    head = g.get_organization('hypoport').get_repo(repository).get_branch('master').commit.sha
 
     while True:
+        branch_counter = 1
         try:
-            g.get_organization('hypoport').get_repo(repository).create_git_ref(f'refs/heads/{branch_name}', head)
+            ref = g.get_organization('hypoport').get_repo(repository).create_git_ref(f'refs/heads/{branch_name}', head)
         except GithubException as e:
-            branch_name = _rename_if_exists(branch_counter, e, issue_number)
+            branch_name, branch_counter = _rename_if_exists(e, issue_number, branch_counter)
         else:
             break
 
-    return _ok(f'created branch {branch_name} on {content.get("repository", {}).get("html_url")}')
+    return ref
 
 
-def _rename_if_exists(branch_counter, e, issue_number):
-    if e.status == 422 and json.loads(e.data).get('message') == 'Reference already exists':
+def _rename_if_exists(e, issue_number, branch_counter=0):
+    if e.status == 422 and e.data.get('message') == 'Reference already exists':
         branch_name = f'fix_issue{issue_number}_{branch_counter}'
         branch_counter += 1
-        return branch_name
+        return branch_name, branch_counter
     else:
         raise e
+
+
+def _create_comment(content: Dict, branch_url: str):
+    issue_number: str = int(content.get('issue', {}).get('number'))
+    repository: str = content.get('repository', {}).get('name')
+    g = Github(os.environ['GITHUB_ACCESS_TOKEN'])
+    g.get_organization('hypoport').get_repo(repository).get_issue(issue_number).create_comment(f'Created [branch]({branch_url})')
 
 
 def branch_creation_handler(event: Dict, context):
@@ -63,7 +70,7 @@ def branch_creation_handler(event: Dict, context):
     if not _is_issue_comment(event):
         return _ok('Nothing to do -event is not an issue comment')
 
-    comment_body = event.get('comment',{}).get('body')
+    comment_body = content.get('comment', {}).get('body')
     if not comment_body:
         _ok(f'No comment content found')
 
@@ -71,4 +78,6 @@ def branch_creation_handler(event: Dict, context):
         _ok(f'No magic command in comment')
 
     # return _ok('Nothing to do - event is not an issue comment')
-    return _create_branch(content)
+    ref = _create_branch(content)
+    _create_comment(content, ref.url)
+    return _ok(f'created branch {ref.ref} on {content.get("repository", {}).get("html_url")}')
