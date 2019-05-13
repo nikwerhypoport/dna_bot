@@ -1,0 +1,32 @@
+service: dna-bot
+
+provider:
+  name: aws
+  runtime: python3.7
+  region: eu-central-1
+  deploymentBucket: ep.dev.projects
+  stage: ${opt:stage, "dev"}
+  stackTags:
+    service: ${self:service}
+    context: exploration-days
+    maintainer: nikolaus.werner
+    repo: https://github.com/nikolaus/dna_bot
+  environment: # this needs to go into the aws secret store
+    SECRET_TOKEN: ${opt:secret, ""}
+    GITHUB_ACCESS_TOKEN: ${opt:token, ""}
+
+package:
+  exclude:
+    - '**/*'
+  include:
+    - 'dna_bot/*.py'
+
+functions:
+  branch-creation:
+    handler: dna_bot.main.branch_creation_handler
+    name: ${self:service}-branch-creation-${self:provider.stage}
+    events:
+      - http:
+          path: /create_branch
+          method: post
+          integration: lambda
