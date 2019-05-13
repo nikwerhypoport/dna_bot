@@ -1,5 +1,8 @@
 service: dna-bot
 
+
+plugins:
+  - serverless-python-requirements
 provider:
   name: aws
   runtime: python3.7
@@ -15,11 +18,24 @@ provider:
     SECRET: ${opt:secret, ""}
     GITHUB_ACCESS_TOKEN: ${opt:token, ""}
 
+
 package:
   exclude:
     - '**/*'
   include:
     - 'dna_bot/*.py'
+
+custom:
+  pythonRequirements:
+    useStaticCache: false
+    useDownloadCache: false
+    dockerizePip: false
+    usePipenv: false
+    slim: true
+    zip: false
+    slimPatterns:
+      - '**/*.egg-info*'
+      - '**/*.dist-info*'
 
 functions:
   branch-creation:
