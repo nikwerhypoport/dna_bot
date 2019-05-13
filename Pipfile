@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-requests = "*"
+pygithub = "*"
 
 [requires]
 python_version = "3.6"
