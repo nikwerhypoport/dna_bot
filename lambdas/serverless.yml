@@ -12,7 +12,7 @@ provider:
     maintainer: nikolaus.werner
     repo: https://github.com/nikolaus/dna_bot
   environment: # this needs to go into the aws secret store
-    SECRET_TOKEN: ${opt:secret, ""}
+    SECRET: ${opt:secret, ""}
     GITHUB_ACCESS_TOKEN: ${opt:token, ""}
 
 package:
