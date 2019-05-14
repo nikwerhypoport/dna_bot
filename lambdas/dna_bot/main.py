@@ -17,13 +17,13 @@ def _contains_command(content: str):
 def _create_branch(content: Dict) -> GitRef:
     issue_number: str = content.get('issue', {}).get('number')
     repository: str = content.get('repository', {}).get('name')
-    branch_name = f'fix_issue_{issue_number}'
+    branch_counter = 0
+    branch_name = f'fix_issue_{issue_number}_{branch_counter}'
 
     g = Github(os.environ['GITHUB_ACCESS_TOKEN'])
     head = g.get_organization('hypoport').get_repo(repository).get_branch('master').commit.sha
 
     while True:
-        branch_counter = 1
         try:
             ref = g.get_organization('hypoport').get_repo(repository).create_git_ref(f'refs/heads/{branch_name}', head)
         except GithubException as e:
@@ -34,10 +34,11 @@ def _create_branch(content: Dict) -> GitRef:
     return ref
 
 
-def _rename_if_exists(e, issue_number, branch_counter=0):
+def _rename_if_exists(e, issue_number, branch_counter):
     if e.status == 422 and e.data.get('message') == 'Reference already exists':
-        branch_name = f'fix_issue{issue_number}_{branch_counter}'
+        branch_name = f'fix_issue_{issue_number}_{branch_counter}'
         branch_counter += 1
+        print(branch_name)
         return branch_name, branch_counter
     else:
         raise e

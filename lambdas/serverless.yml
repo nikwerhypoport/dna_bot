@@ -39,6 +39,7 @@ custom:
 
 functions:
   branch-creation:
+    timeout: 10
     handler: dna_bot.main.branch_creation_handler
     name: ${self:service}-branch-creation-${self:provider.stage}
     events:
